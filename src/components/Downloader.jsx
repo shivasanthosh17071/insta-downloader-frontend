@@ -93,7 +93,7 @@ export default function LandingPage() {
       }}>
          {/* Profile Image */}
   <img
-    src="/shivaSanthosh.jpg" // replace with your image path
+    src='/hero.jpg' // replace with your image path
     alt="Santhosh"
     style={{
       width: "120px",

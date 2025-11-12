@@ -1,3 +1,13 @@
 body{
     /* overflow-x: hidden; */
 }
+ /* Hide scrollbars (works for Chrome, Edge, Safari, Firefox) */
+          ::-webkit-scrollbar {
+            display: none;
+          }
+          html, body {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE 10+ */
+            overflow-y: auto;
+            overflow-x: hidden;
+          }

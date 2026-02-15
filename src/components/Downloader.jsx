@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import DownloadSteps from "./DownloadSteps";
 import { motion } from "framer-motion";
 
 export default function LandingPage() {
   const [url, setUrl] = useState("");
   const [videoURL, setVideoURL] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [recentVideos, setRecentVideos] = useState([]);
-
+const [menuOpen, setMenuOpen] = useState(false);
+  // Load recent downloads
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("recentVideos") || "[]");
+    const stored = JSON.parse(localStorage.getItem("recentVideos")) || [];
     setRecentVideos(stored);
   }, []);
 
-  const saveRecentVideo = (video) => {
-    let updated = [video, ...recentVideos];
-    if (updated.length > 2) updated = updated.slice(0, 2);
+  const saveRecentVideo = (newVideo) => {
+    let updated = [newVideo, ...recentVideos.filter(v => v !== newVideo)];
+    if (updated.length > 3) updated = updated.slice(0, 3);
     setRecentVideos(updated);
     localStorage.setItem("recentVideos", JSON.stringify(updated));
   };
@@ -27,473 +27,369 @@ export default function LandingPage() {
       setError("Please enter a valid Instagram URL");
       return;
     }
+
+    setLoading(true);
     setError("");
     setVideoURL("");
-    setLoading(true);
 
     try {
-      const status = await axios.get("https://instadownloaderbackend.vercel.app/api/status");
-      if (!status.data.live) throw new Error("Server not live");
+      const res = await axios.post(
+        "https://instadownloaderbackend.vercel.app/api/download",
+        { url }
+      );
 
-      const res = await axios.post("https://instadownloaderbackend.vercel.app/api/download", { url });
-      setVideoURL(res.data.videoURL);
-      saveRecentVideo(res.data.videoURL);
+      if (res.data.videoURL) {
+        setVideoURL(res.data.videoURL);
+        saveRecentVideo(res.data.videoURL);
+      } else {
+        setError("Video not found. Make sure the post is public.");
+      }
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to fetch video. Make sure the URL is public.");
+      setError("Failed to fetch video. Server may be down.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* Hide scrollbars + smooth scroll */}
-      <style>
-        {`
-          ::-webkit-scrollbar {
-            display: none;
-          }
-          html, body {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            overflow-y: auto;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-          }
-        `}
-      </style>
+    <div
+      style={{
+        minHeight: "100vh",
+        fontFamily: "Poppins, sans-serif",
+        background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
+        color: "#fff",
+      }}
+    >
+      {/* ================= NAVBAR ================= */}
+     <nav
+  style={{
+    position: "sticky",
+    top: 0,
+    zIndex: 1000,
+    backdropFilter: "blur(20px)",
+    background: "rgba(255, 255, 255, 0)",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+  }}
+>
+  <div
+    style={{
+      maxWidth: "1200px",
+      margin: "auto",
+      padding: "14px 20px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}
+  >
+    {/* Logo */}
+    <div
+      style={{
+        fontWeight: "700",
+        fontSize: "1.1rem",
+        color: "#fff",
+      }}
+    >
+      Santhosh.dev insta downloader
+    </div>
 
-      <div
+    {/* Desktop Links */}
+    <div
+      className="desktopMenu"
+      style={{
+        display: "flex",
+        gap: "28px",
+        alignItems: "center",
+      }}
+    >
+      <a href="#home" style={linkStyle}>Home</a>
+      <a href="#how" style={linkStyle}>How It Works</a>
+      <a href="#about" style={linkStyle}>About</a>
+    </div>
+
+    {/* Mobile Hamburger */}
+    <div
+      className="mobileMenu"
+      onClick={() => setMenuOpen(!menuOpen)}
+      style={{
+        display: "none",
+        flexDirection: "column",
+        gap: "5px",
+        cursor: "pointer",
+      }}
+    >
+      <div style={barStyle}></div>
+      <div style={barStyle}></div>
+      <div style={barStyle}></div>
+    </div>
+  </div>
+
+  {/* Mobile Dropdown */}
+  {menuOpen && (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "20px",
+        padding: "20px",
+        background: "rgba(15,15,30,0.95)",
+      }}
+    >
+      <a href="#home" style={linkStyle} onClick={() => setMenuOpen(false)}>Home</a>
+      <a href="#how" style={linkStyle} onClick={() => setMenuOpen(false)}>How It Works</a>
+      <a href="#about" style={linkStyle} onClick={() => setMenuOpen(false)}>About</a>
+    </div>
+  )}
+
+  {/* Responsive CSS */}
+  <style>
+    {`
+      @media (max-width: 768px) {
+        .desktopMenu {
+          display: none !important;
+        }
+        .mobileMenu {
+          display: flex !important;
+        }
+      }
+    `}
+  </style>
+</nav>
+
+      {/* ================= HERO ================= */}
+      <section
+        id="home"
         style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a0b2e, #3c096c, #9d4edd)",
-          color: "#fff",
-          fontFamily: "Poppins, sans-serif",
-          overflowX: "hidden",
+          padding: "80px 20px",
+          textAlign: "center",
+          maxWidth: "1000px",
+          margin: "auto",
         }}
       >
-        {/* HERO */}
-        <section
-          id="hero"
+        <h1
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-            padding: "60px 20px",
-            textAlign: "center",
+            fontSize: "clamp(2rem, 5vw, 3.5rem)",
+            fontWeight: "800",
           }}
         >
-          <motion.img
-            src="/hero.jpg"
-            alt="Santhosh"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
+          Instagram Video Downloader
+        </h1>
+
+        <p style={{ color: "#cfcfff", marginBottom: "40px" }}>
+          Download Instagram reels and videos instantly in HD quality.
+        </p>
+
+        <div
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            padding: "25px",
+            borderRadius: "20px",
+            backdropFilter: "blur(15px)",
+            maxWidth: "550px",
+            margin: "auto",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Paste Instagram URL here..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
             style={{
-              width: "130px",
-              height: "130px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "3px solid #fff",
-              boxShadow: "0 0 25px rgba(155, 80, 255, 0.8)",
+              width: "89%",
+              padding: "15px",
+              borderRadius: "12px",
+              border: "none",
               marginBottom: "15px",
             }}
           />
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            style={{
-              fontSize: "3rem",
-              fontWeight: "700",
-              color: "#ffffff",
-              textShadow: "0 0 15px #9d4edd",
-            }}
-          >
-            Santhosh.dev Insta
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            style={{
-              fontSize: "1.1rem",
-              maxWidth: "480px",
-              color: "#d8caff",
-              marginBottom: "30px",
-            }}
-          >
-            Download Instagram Reels & Videos with one click. Built with ❤️ by Santhosh.
-          </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.8 }}
+          <button
+            onClick={handleDownload}
+            disabled={loading}
             style={{
-              background: "rgba(255,255,255,0.1)",
-              backdropFilter: "blur(15px)",
-              borderRadius: "20px",
-              padding: "30px",
               width: "100%",
-              maxWidth: "480px",
-              boxShadow: "0 0 40px rgba(0,0,0,0.5)",
+              padding: "14px",
+              borderRadius: "12px",
+              border: "none",
+              fontWeight: "700",
+              cursor: "pointer",
+              background:
+                "linear-gradient(90deg, #ff006e, #8338ec, #3a86ff)",
+              color: "#fff",
+              opacity: loading ? 0.6 : 1,
             }}
           >
-            <input
-              type="text"
-              placeholder="Paste Instagram URL..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+            {loading ? "Processing..." : "Download Now"}
+          </button>
+
+          {error && (
+            <p style={{ marginTop: "15px", color: "yellow" }}>
+              {error}
+            </p>
+          )}
+
+         {videoURL && (
+  <div style={{ marginTop: "20px" }}>
+    <video
+      src={videoURL}
+      controls
+      style={{ width: "100%", borderRadius: "15px" }}
+    />
+
+    <a
+      href={`https://instadownloaderbackend.vercel.app/api/download-file?url=${encodeURIComponent(
+        videoURL
+      )}`}
+      style={{
+        display: "block",
+        marginTop: "12px",
+        padding: "10px",
+        borderRadius: "10px",
+        background: "#16a34a",
+        textDecoration: "none",
+        color: "#fff",
+        fontWeight: "600",
+        textAlign: "center",
+      }}
+    >
+      Save to Gallery
+    </a>
+  </div>
+)}
+        </div>
+      </section>
+
+      {/* ================= HOW IT WORKS ================= */}
+      <section
+        id="how"
+        style={{
+          padding: "80px 20px",
+          textAlign: "center",
+          background: "rgba(0,0,0,0.3)",
+        }}
+      >
+        <h2 style={{ marginBottom: "40px" }}>How It Works</h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "20px",
+            maxWidth: "1000px",
+            margin: "auto",
+          }}
+        >
+          {["Paste Link", "Click Download", "Save Video"].map((step, i) => (
+            <div
+              key={i}
               style={{
-                width: "90%",
-                padding: "14px",
-                borderRadius: "12px",
-                border: "none",
-                outline: "none",
-                textAlign: "center",
-                marginBottom: "15px",
-                fontWeight: "500",
-                boxShadow: "inset 0 2px 6px rgba(0,0,0,0.2)",
-              }}
-            />
-            <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleDownload}
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "12px",
-                background: loading
-                  ? "linear-gradient(90deg, #999, #777)"
-                  : "linear-gradient(90deg, #7b2cbf, #9d4edd, #c77dff)",
-                color: "#fff",
-                fontWeight: "700",
-                border: "none",
-                cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: "0 0 15px rgba(157,78,221,0.6)",
-                transition: "0.3s",
+                padding: "25px",
+                borderRadius: "15px",
+                background: "rgba(255,255,255,0.05)",
               }}
             >
-              {loading ? "Processing..." : "Download Video"}
-            </motion.button>
+              <h3>Step {i + 1}</h3>
+              <p style={{ color: "#ccc" }}>{step}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-            {error && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{ marginTop: "15px", color: "#ffcc00", fontWeight: "500" }}
-              >
-                {error}
-              </motion.p>
-            )}
+      {/* ================= RECENT DOWNLOADS ================= */}
+      {recentVideos.length > 0 && (
+        <section style={{ padding: "60px 20px", textAlign: "center" }}>
+          <h2 style={{ marginBottom: "30px" }}>Recent Downloads</h2>
 
-            {videoURL && (
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                style={{ marginTop: "20px" }}
-              >
-                <video
-                  src={videoURL}
-                  controls
-                  style={{ width: "100%", borderRadius: "15px", boxShadow: "0 0 25px rgba(0,0,0,0.4)" }}
-                ></video>
-                <a
-                  href={`https://instadownloaderbackend.vercel.app/api/download-file?url=${encodeURIComponent(videoURL)}`}
-                  style={{
-                    display: "block",
-                    background: "#2ecc71",
-                    color: "#fff",
-                    fontWeight: "700",
-                    padding: "10px",
-                    borderRadius: "12px",
-                    textDecoration: "none",
-                    marginTop: "10px",
-                  }}
-                >
-                  Save to Gallery
-                </a>
-              </motion.div>
-            )}
-          </motion.div>
-
-          <DownloadSteps />
-        </section>
-
-        {/* RECENT DOWNLOADS */}
-        {recentVideos.length > 0 && (
-          <section
-            id="recent"
+          <div
             style={{
-              padding: "60px 20px",
-              textAlign: "center",
-              borderTop: "1px solid rgba(255,255,255,0.1)",
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "20px",
+              maxWidth: "1000px",
+              margin: "auto",
             }}
           >
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              style={{ fontWeight: "700", color: "#ffccff", marginBottom: "20px" }}
-            >
-              Recent Downloads
-            </motion.h2>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 1 }}
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                gap: "20px",
-              }}
-            >
-              {recentVideos.map((vid, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ scale: 1.02 }}
-                  style={{
-                    background: "rgba(255,255,255,0.1)",
-                    borderRadius: "20px",
-                    padding: "15px",
-                    width: "300px",
-                    boxShadow: "0 0 20px rgba(0,0,0,0.4)",
-                  }}
-                >
-                  <video src={vid} controls style={{ width: "100%", borderRadius: "12px" }}></video>
-                  <div style={{ marginTop: "10px", display: "flex", gap: "10px", justifyContent: "center" }}>
-                    <a
-                      href={vid}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        background: "#222",
-                        color: "#fff",
-                        padding: "6px 15px",
-                        borderRadius: "8px",
-                        textDecoration: "none",
-                      }}
-                    >
-                      Open
-                    </a>
-                    <a
-                      href={`https://instadownloaderbackend.vercel.app/api/download-file?url=${encodeURIComponent(vid)}`}
-                      style={{
-                        background: "#16a34a",
-                        color: "#fff",
-                        padding: "6px 15px",
-                        borderRadius: "8px",
-                        textDecoration: "none",
-                      }}
-                    >
-                      Save
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </section>
-        )}
-{/* ABOUT DEVELOPER */}
-<section
-  id="about"
-  style={{
-    padding: "70px 20px",
-    textAlign: "center",
-    background: "linear-gradient(180deg, rgba(157, 78, 221, 0.08), rgba(0,0,0,0.6))",
-    borderTop: "1px solid rgba(255,255,255,0.1)",
-  }}
->
-  <motion.div
-    initial={{ opacity: 0, y: 40 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.8 }}
+           {recentVideos.map((vid, index) => (
+  <div
+    key={index}
     style={{
-      maxWidth: "700px",
-      margin: "0 auto",
-      background: "rgba(255,255,255,0.08)",
-      borderRadius: "20px",
-      padding: "40px 25px",
-      backdropFilter: "blur(12px)",
-      boxShadow: "0 0 40px rgba(0,0,0,0.4)",
+      background: "rgba(255,255,255,0.05)",
+      padding: "15px",
+      borderRadius: "15px",
     }}
   >
-    <img
-      src="/hero.jpg"
-      alt="Santhosh Developer"
-      style={{
-        width: "120px",
-        height: "120px",
-        borderRadius: "50%",
-        border: "3px solid #fff",
-        boxShadow: "0 0 20px rgba(157,78,221,0.6)",
-        objectFit: "cover",
-        marginBottom: "20px",
-      }}
+    <video
+      src={vid}
+      controls
+      style={{ width: "100%", borderRadius: "10px" }}
     />
-    <h2
+
+    <a
+      href={`https://instadownloaderbackend.vercel.app/api/download-file?url=${encodeURIComponent(
+        vid
+      )}`}
       style={{
+        display: "block",
+        marginTop: "10px",
+        padding: "8px",
+        borderRadius: "8px",
+        background: "#16a34a",
+        textDecoration: "none",
         color: "#fff",
-        fontWeight: "700",
-        marginBottom: "10px",
-        textShadow: "0 0 10px rgba(157,78,221,0.8)",
+        textAlign: "center",
       }}
     >
-      About Developer
-    </h2>
-    <p
-      style={{
-        color: "#ddd",
-        fontSize: "1.05rem",
-        lineHeight: "1.8",
-        maxWidth: "580px",
-        margin: "0 auto 15px",
-      }}
-    >
-      Hi 👋 I'm <strong>Santhosh</strong> — the creator of{" "}
-      <strong>Santhosh.dev Insta</strong>.  
-      I love building fast, user-friendly, and modern web tools that make people’s lives simpler.
-      This downloader is one of my fun projects for my friends 💜.
-    </p>
-    <p style={{ color: "#bfaaff", fontWeight: "500", fontSize: "1rem" }}>
-      Passion: Front-End Development & UI Design ✨  
-      <br />
-      Tech Stack: ReactJS • Node.js • MongoDB
-    </p>
-
-    <div
-      style={{
-        marginTop: "25px",
-        display: "flex",
-        justifyContent: "center",
-        gap: "15px",
-      }}
-    >
-      <a
-        href="https://github.com/shivasanthosh17071"
-        target="_blank"
-        rel="noreferrer"
-        style={{
-          background: "linear-gradient(90deg, #7b2cbf, #c77dff)",
-          color: "#fff",
-          padding: "10px 18px",
-          borderRadius: "10px",
-          textDecoration: "none",
-          fontWeight: "600",
-          boxShadow: "0 0 15px rgba(157,78,221,0.4)",
-          transition: "0.3s",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-      >
-         GitHub
-      </a>
-    
-<a
-  href="https://santhoshdev.space"
-  target="_blank"
-  rel="noreferrer"
-  style={{
-    background: "linear-gradient(90deg, #3c096c, #7209b7)",
-    color: "#fff",
-    padding: "10px 22px",
-    borderRadius: "10px",
-    textDecoration: "none",
-    fontWeight: "600",
-    boxShadow: "0 0 15px rgba(0,0,0,0.3)",
-    display: "inline-block",
-    transition: "all 0.3s ease",
-    transform: "translateY(0)",
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "translateY(-4px)";
-    e.currentTarget.style.boxShadow = "0 0 25px rgba(157,78,221,0.6)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "translateY(0)";
-    e.currentTarget.style.boxShadow = "0 0 15px rgba(0,0,0,0.3)";
-  }}
->
-  🔗 Portfolio
-</a>
-
-    </div>
-  </motion.div>
-</section>
-
-        {/* FRIENDS */}
-        <section
-          id="friends"
-          style={{
-            padding: "70px 20px",
-            textAlign: "center",
-            background: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.6))",
-          }}
-        >
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{ fontWeight: "700", color: "#e0b0ff", marginBottom: "20px" }}
-          >
-            Dedicated to My Friends 💜
-          </motion.h2>
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 1 }}
-            style={{
-              display: "flex",
-              overflowX: "auto",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              gap: "15px",
-              marginTop: "25px",
-              paddingBottom: "10px",
-            }}
-          >
-            <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-            {["/friends1.jpg", "/friends2.jpg"].map((img, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.03 }}
-                style={{
-                  minWidth: "260px",
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  boxShadow: "0 0 25px rgba(0,0,0,0.4)",
-                }}
-              >
-                <img src={img} alt={`Friend ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </motion.div>
-            ))}
-          </motion.div>
+      Download Again
+    </a>
+  </div>
+))}
+          </div>
         </section>
+      )}
 
-        {/* FOOTER */}
-        <footer
-          id="footer"
-          style={{
-            background: "#000",
-            color: "#bbb",
-            textAlign: "center",
-            padding: "20px",
-            fontSize: "0.9rem",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          © 2025 <strong>Santhosh.dev Insta</strong> | Built by Santhosh 💻 | Only for friends 💜
-        </footer>
-      </div>
-    </>
+      {/* ================= ABOUT ================= */}
+      <section
+        id="about"
+        style={{
+          padding: "80px 20px",
+          textAlign: "center",
+          maxWidth: "800px",
+          margin: "auto",
+        }}
+      >
+        <h2 style={{ marginBottom: "20px" }}>About Developer</h2>
+        <p style={{ color: "#ccc", lineHeight: "1.8" }}>
+          Hi 👋 I'm Santhosh, a Full Stack Developer.
+          I built this tool specially for my friends to download Instagram
+          videos easily. This is a personal project — not a public service 💜
+        </p>
+      </section>
+
+      {/* ================= FOOTER ================= */}
+      <footer
+        style={{
+          padding: "20px",
+          textAlign: "center",
+          background: "#000",
+          color: "#888",
+        }}
+      >
+        © 2026 Santhosh.dev — Built for Friends 💜
+      </footer>
+    </div>
   );
 }
+const linkStyle = {
+  color: "#fff",
+  textDecoration: "none",
+  fontSize: "0.95rem",
+  fontWeight: "500",
+};
+
+const barStyle = {
+  width: "22px",
+  height: "2px",
+  background: "#fff",
+  borderRadius: "2px",
+};
